@@ -1,7 +1,12 @@
 from flask import Flask, jsonify, request
 from config import app, db
 from models import User, RoleEnum
+import os
 
+from flask_migrate import Migrate
+from config import app, db
+
+migrate = Migrate(app, db)
 # CREATE
 @app.route("/users", methods=["POST"])
 def create_user():
@@ -69,6 +74,4 @@ def delete_user(id):
 
 # App Runner
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
