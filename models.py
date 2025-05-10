@@ -1,6 +1,8 @@
-from config import db
+from flask_sqlalchemy import SQLAlchemy
 import enum
-from sqlalchemy.dialects.postgresql import ENUM
+from sqlalchemy.dialects.postgresql import ENUM, ARRAY
+from sqlalchemy.sql import func
+db = SQLAlchemy()
 
 # Enums
 class SkillEnum(enum.Enum):
@@ -41,14 +43,13 @@ class PaymentStatusEnum(enum.Enum):
     paid = "paid"
     failed = "failed"
 
-# User
+# Models
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.Enum(RoleEnum), default=RoleEnum.freelancer, nullable=False)
-
     bio = db.Column(db.Text)
     location = db.Column(db.String(100))
     languages = db.Column(db.ARRAY(db.String))
@@ -76,7 +77,6 @@ class User(db.Model):
             "createdAt": self.created_at.isoformat() if self.created_at else None
         }
 
-# Project
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
@@ -85,12 +85,23 @@ class Project(db.Model):
     budget = db.Column(db.Float)
     duration = db.Column(db.String(100))
     status = db.Column(db.Enum(ProjectStatusEnum), default=ProjectStatusEnum.open)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
-
+    created_at = db.Column(db.DateTime, server_default=func.now())
     client_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     client = db.relationship('User', foreign_keys=[client_id])
 
-# Proposal
+    def to_json(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "description": self.description,
+            "category": self.category,
+            "budget": self.budget,
+            "duration": self.duration,
+            "status": self.status.value,
+            "createdAt": self.created_at.isoformat() if self.created_at else None,
+            "clientId": self.client_id
+        }
+
 class Proposal(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
@@ -98,28 +109,46 @@ class Proposal(db.Model):
     cover_letter = db.Column(db.Text)
     proposed_rate = db.Column(db.Float)
     status = db.Column(db.Enum(ProposalStatusEnum), default=ProposalStatusEnum.pending)
-    submitted_at = db.Column(db.DateTime, server_default=db.func.now())
-
+    submitted_at = db.Column(db.DateTime, server_default=func.now())
     project = db.relationship('Project', backref='proposals')
     freelancer = db.relationship('User', foreign_keys=[freelancer_id])
 
-# Contract
+    def to_json(self):
+        return {
+            "id": self.id,
+            "projectId": self.project_id,
+            "freelancerId": self.freelancer_id,
+            "coverLetter": self.cover_letter,
+            "proposedRate": self.proposed_rate,
+            "status": self.status.value,
+            "submittedAt": self.submitted_at.isoformat() if self.submitted_at else None
+        }
+
 class Contract(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
     client_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     freelancer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
     agreed_rate = db.Column(db.Float)
     status = db.Column(db.Enum(ContractStatusEnum), default=ContractStatusEnum.active)
-    started_at = db.Column(db.DateTime, server_default=db.func.now())
+    started_at = db.Column(db.DateTime, server_default=func.now())
     ended_at = db.Column(db.DateTime)
-
     project = db.relationship('Project')
     client = db.relationship('User', foreign_keys=[client_id])
     freelancer = db.relationship('User', foreign_keys=[freelancer_id])
 
-# Payment
+    def to_json(self):
+        return {
+            "id": self.id,
+            "projectId": self.project_id,
+            "clientId": self.client_id,
+            "freelancerId": self.freelancer_id,
+            "agreedRate": self.agreed_rate,
+            "status": self.status.value,
+            "startedAt": self.started_at.isoformat() if self.started_at else None,
+            "endedAt": self.ended_at.isoformat() if self.ended_at else None
+        }
+
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'))
@@ -127,23 +156,47 @@ class Payment(db.Model):
     method = db.Column(db.String(50))
     status = db.Column(db.Enum(PaymentStatusEnum), default=PaymentStatusEnum.pending)
     paid_at = db.Column(db.DateTime)
-
     contract = db.relationship('Contract')
 
-# Message (Chat System)
+    def to_json(self):
+        return {
+            "id": self.id,
+            "contractId": self.contract_id,
+            "amount": self.amount,
+            "method": self.method,
+            "status": self.status.value,
+            "paidAt": self.paid_at.isoformat() if self.paid_at else None
+        }
+
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     sender_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     receiver_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     text = db.Column(db.Text)
-    sent_at = db.Column(db.DateTime, server_default=db.func.now())
-
+    sent_at = db.Column(db.DateTime, server_default=func.now())
     sender = db.relationship('User', foreign_keys=[sender_id])
     receiver = db.relationship('User', foreign_keys=[receiver_id])
 
-# Admin (optional)
+    def to_json(self):
+        return {
+            "id": self.id,
+            "senderId": self.sender_id,
+            "receiverId": self.receiver_id,
+            "text": self.text,
+            "sentAt": self.sent_at.isoformat() if self.sent_at else None
+        }
+
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(50), default="admin")
     permissions = db.Column(db.ARRAY(db.String), default=[])
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "email": self.email,
+            "role": self.role,
+            "permissions": self.permissions
+        }
