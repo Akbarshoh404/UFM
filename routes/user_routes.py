@@ -1,6 +1,7 @@
 from flask import jsonify, request
 from config import app, db
 from models import User, RoleEnum
+from werkzeug.security import generate_password_hash
 
 # CREATE
 @app.route("/users", methods=["POST"])
@@ -9,7 +10,7 @@ def create_user():
     new_user = User(
         name=data["name"],
         email=data["email"],
-        password=data["password"],  # Note: In production, hash the password
+        password=generate_password_hash(data["password"]),  # Hash the password
         role=RoleEnum[data.get("role", "freelancer")]
     )
     db.session.add(new_user)

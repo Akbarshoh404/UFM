@@ -1,6 +1,7 @@
 from flask import jsonify, request
 from config import app, db
 from models import Admin
+from werkzeug.security import generate_password_hash
 
 # CREATE
 @app.route("/admins", methods=["POST"])
@@ -8,7 +9,7 @@ def create_admin():
     data = request.get_json()
     new_admin = Admin(
         email=data["email"],
-        password=data["password"],  # Note: In production, hash the password
+        password=generate_password_hash(data["password"]),  # Hash the password
         permissions=data.get("permissions", [])
     )
     db.session.add(new_admin)
