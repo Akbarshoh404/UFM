@@ -1,21 +1,29 @@
-from flask import jsonify, request
-from config import app, db
+from flask import jsonify, request, abort
+from app import app, db  # Changed from config to app
 from models import Proposal, ProposalStatusEnum
 
 # CREATE
 @app.route("/proposals", methods=["POST"])
 def create_proposal():
     data = request.get_json()
-    new_proposal = Proposal(
-        project_id=data["projectId"],
-        freelancer_id=data["freelancerId"],
-        cover_letter=data.get("coverLetter"),
-        proposed_rate=data.get("proposedRate"),
-        status=ProposalStatusEnum[data.get("status", "pending")]
-    )
-    db.session.add(new_proposal)
-    db.session.commit()
-    return jsonify({"message": "Proposal created", "proposal": new_proposal.to_json()}), 201
+    if not all(key in data for key in ["projectId", "freelancerId"]):
+        abort(400, description="Missing required fields: projectId, freelancerId")
+    try:
+        new_proposal = Proposal(
+            project_id=data["projectId"],
+            freelancer_id=data["freelancerId"],
+            cover_letter=data.get("coverLetter"),
+            proposed_rate=data.get("proposedRate"),
+            status=ProposalStatusEnum[data.get("status", "pending")]
+        )
+        db.session.add(new_proposal)
+        db.session.commit()
+        return jsonify({"message": "Proposal created", "proposal": new_proposal.to_json()}), 201
+    except ValueError as e:
+        abort(400, description=str(e))
+    except Exception as e:
+        db.session.rollback()
+        abort(500, description="Failed to create proposal")
 
 # READ ALL
 @app.route("/proposals", methods=["GET"])

@@ -1,23 +1,31 @@
-from flask import jsonify, request
-from config import app, db
+from flask import jsonify, request, abort
+from app import app, db  # Changed from config to app
 from models import Project, ProjectStatusEnum
 
 # CREATE
 @app.route("/projects", methods=["POST"])
 def create_project():
     data = request.get_json()
-    new_project = Project(
-        title=data["title"],
-        description=data.get("description"),
-        category=data.get("category"),
-        budget=data.get("budget"),
-        duration=data.get("duration"),
-        client_id=data["clientId"],
-        status=ProjectStatusEnum[data.get("status", "open")]
-    )
-    db.session.add(new_project)
-    db.session.commit()
-    return jsonify({"message": "Project created", "project": new_project.to_json()}), 201
+    if not all(key in data for key in ["title", "clientId"]):
+        abort(400, description="Missing required fields: title, clientId")
+    try:
+        new_project = Project(
+            title=data["title"],
+            description=data.get("description"),
+            category=data.get("category"),
+            budget=data.get("budget"),
+            duration=data.get("duration"),
+            client_id=data["clientId"],
+            status=ProjectStatusEnum[data.get("status", "open")]
+        )
+        db.session.add(new_project)
+        db.session.commit()
+        return jsonify({"message": "Project created", "project": new_project.to_json()}), 201
+    except ValueError as e:
+        abort(400, description=str(e))
+    except Exception as e:
+        db.session.rollback()
+        abort(500, description="Failed to create project")
 
 # READ ALL
 @app.route("/projects", methods=["GET"])

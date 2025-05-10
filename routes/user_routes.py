@@ -1,5 +1,5 @@
-from flask import jsonify, request
-from config import app, db
+from flask import jsonify, request, abort
+from app import app, db  # Changed from config to app
 from models import User, RoleEnum
 from werkzeug.security import generate_password_hash
 
@@ -7,15 +7,23 @@ from werkzeug.security import generate_password_hash
 @app.route("/users", methods=["POST"])
 def create_user():
     data = request.get_json()
-    new_user = User(
-        name=data["name"],
-        email=data["email"],
-        password=generate_password_hash(data["password"]),  # Hash the password
-        role=RoleEnum[data.get("role", "freelancer")]
-    )
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({"message": "User created", "user": new_user.to_json()}), 201
+    if not all(key in data for key in ["name", "email", "password"]):
+        abort(400, description="Missing required fields: name, email, password")
+    try:
+        new_user = User(
+            name=data["name"],
+            email=data["email"],
+            password=generate_password_hash(data["password"]),
+            role=RoleEnum[data.get("role", "freelancer")]
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify({"message": "User created", "user": new_user.to_json()}), 201
+    except ValueError as e:
+        abort(400, description=str(e))
+    except Exception as e:
+        db.session.rollback()
+        abort(500, description="Failed to create user")
 
 # READ ALL
 @app.route("/users", methods=["GET"])
@@ -37,7 +45,8 @@ def update_user(id):
     data = request.get_json()
     user.name = data.get("name", user.name)
     user.email = data.get("email", user.email)
-    user.password = data.get("password", user.password)  # Note: Hash password in production
+    if "password" in data:
+        user.password = generate_password_hash(data["password"])
     user.role = RoleEnum[data.get("role", user.role.name)] if "role" in data else user.role
     db.session.commit()
     return jsonify({"message": "User updated", "user": user.to_json()})
@@ -53,7 +62,7 @@ def patch_user(id):
     if "email" in data:
         user.email = data["email"]
     if "password" in data:
-        user.password = data["password"]  # Note: Hash password in production
+        user.password = generate_password_hash(data["password"])
     if "role" in data:
         user.role = RoleEnum[data["role"]]
 
