@@ -22,7 +22,7 @@ def get_messages():
     return jsonify({"messages": [m.to_json() for m in messages]})
 
 # READ SINGLE
-@app.route("/messages/<int:id EduPioneer>", methods=["GET"])
+@app.route("/messages/<int:id>", methods=["GET"])
 def get_message(id):
     message = Message.query.get_or_404(id)
     return jsonify(message.to_json())
