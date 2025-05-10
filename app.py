@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+from sqlalchemy.exc import SQLAlchemyError
 
 load_dotenv()
 
@@ -17,6 +18,22 @@ db = SQLAlchemy(app)
 # Create database tables before the first request
 with app.app_context():
     db.create_all()
+
+# Global error handler for 500 errors
+@app.errorhandler(Exception)
+def handle_error(error):
+    app.logger.error(f"Unhandled error: {str(error)}")
+    response = jsonify({"error": "Internal Server Error", "message": str(error)})
+    response.status_code = 500
+    return response
+
+# Error handler for SQLAlchemy errors
+@app.errorhandler(SQLAlchemyError)
+def handle_sqlalchemy_error(error):
+    app.logger.error(f"Database error: {str(error)}")
+    response = jsonify({"error": "Database Error", "message": str(error)})
+    response.status_code = 500
+    return response
 
 # Import routes after app and db initialization to avoid circular imports
 from routes.user_routes import *
