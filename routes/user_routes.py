@@ -1,10 +1,12 @@
-from flask import jsonify, request, abort
-from app import app, db  # Changed from config to app
+from flask import Blueprint, jsonify, request, abort
+from app import db
 from models import User, RoleEnum
 from werkzeug.security import generate_password_hash
 
+user_bp = Blueprint('user', __name__, url_prefix='/users')
+
 # CREATE
-@app.route("/users", methods=["POST"])
+@user_bp.route("/", methods=["POST"])
 def create_user():
     data = request.get_json()
     if not all(key in data for key in ["name", "email", "password"]):
@@ -26,20 +28,20 @@ def create_user():
         abort(500, description="Failed to create user")
 
 # READ ALL
-@app.route("/users", methods=["GET"])
+@user_bp.route("/", methods=["GET"])
 def get_users():
     users = User.query.all()
     json_users = [u.to_json() for u in users]
     return jsonify({"users": json_users})
 
 # READ SINGLE
-@app.route("/users/<int:id>", methods=["GET"])
+@user_bp.route("/<int:id>", methods=["GET"])
 def get_user(id):
     user = User.query.get_or_404(id)
     return jsonify(user.to_json())
 
 # UPDATE FULL (PUT)
-@app.route("/users/<int:id>", methods=["PUT"])
+@user_bp.route("/<int:id>", methods=["PUT"])
 def update_user(id):
     user = User.query.get_or_404(id)
     data = request.get_json()
@@ -52,11 +54,10 @@ def update_user(id):
     return jsonify({"message": "User updated", "user": user.to_json()})
 
 # PARTIAL UPDATE (PATCH)
-@app.route("/users/<int:id>", methods=["PATCH"])
+@user_bp.route("/<int:id>", methods=["PATCH"])
 def patch_user(id):
     user = User.query.get_or_404(id)
     data = request.get_json()
-    
     if "name" in data:
         user.name = data["name"]
     if "email" in data:
@@ -65,12 +66,11 @@ def patch_user(id):
         user.password = generate_password_hash(data["password"])
     if "role" in data:
         user.role = RoleEnum[data["role"]]
-
     db.session.commit()
     return jsonify({"message": "User partially updated", "user": user.to_json()})
 
 # DELETE
-@app.route("/users/<int:id>", methods=["DELETE"])
+@user_bp.route("/<int:id>", methods=["DELETE"])
 def delete_user(id):
     user = User.query.get_or_404(id)
     db.session.delete(user)

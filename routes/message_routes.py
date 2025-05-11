@@ -1,9 +1,11 @@
-from flask import jsonify, request
-from app import app, db
+from flask import Blueprint, jsonify, request
+from app import db
 from models import Message
 
+message_bp = Blueprint('message', __name__, url_prefix='/messages')
+
 # CREATE
-@app.route("/messages", methods=["POST"])
+@message_bp.route("/", methods=["POST"])
 def create_message():
     data = request.get_json()
     new_message = Message(
@@ -16,19 +18,19 @@ def create_message():
     return jsonify({"message": "Message created", "message": new_message.to_json()}), 201
 
 # READ ALL
-@app.route("/messages", methods=["GET"])
+@message_bp.route("/", methods=["GET"])
 def get_messages():
     messages = Message.query.all()
     return jsonify({"messages": [m.to_json() for m in messages]})
 
 # READ SINGLE
-@app.route("/messages/<int:id>", methods=["GET"])
+@message_bp.route("/<int:id>", methods=["GET"])
 def get_message(id):
     message = Message.query.get_or_404(id)
     return jsonify(message.to_json())
 
 # DELETE
-@app.route("/messages/<int:id>", methods=["DELETE"])
+@message_bp.route("/<int:id>", methods=["DELETE"])
 def delete_message(id):
     message = Message.query.get_or_404(id)
     db.session.delete(message)

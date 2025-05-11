@@ -1,9 +1,11 @@
-from flask import jsonify, request, abort
-from app import app, db  # Changed from config to app
+from flask import Blueprint, jsonify, request, abort
+from app import db
 from models import Project, ProjectStatusEnum
 
+project_bp = Blueprint('project', __name__, url_prefix='/projects')
+
 # CREATE
-@app.route("/projects", methods=["POST"])
+@project_bp.route("/", methods=["POST"])
 def create_project():
     data = request.get_json()
     if not all(key in data for key in ["title", "clientId"]):
@@ -28,19 +30,19 @@ def create_project():
         abort(500, description="Failed to create project")
 
 # READ ALL
-@app.route("/projects", methods=["GET"])
+@project_bp.route("/", methods=["GET"])
 def get_projects():
     projects = Project.query.all()
     return jsonify({"projects": [p.to_json() for p in projects]})
 
 # READ SINGLE
-@app.route("/projects/<int:id>", methods=["GET"])
+@project_bp.route("/<int:id>", methods=["GET"])
 def get_project(id):
     project = Project.query.get_or_404(id)
     return jsonify(project.to_json())
 
 # UPDATE
-@app.route("/projects/<int:id>", methods=["PUT"])
+@project_bp.route("/<int:id>", methods=["PUT"])
 def update_project(id):
     project = Project.query.get_or_404(id)
     data = request.get_json()
@@ -54,7 +56,7 @@ def update_project(id):
     return jsonify({"message": "Project updated", "project": project.to_json()})
 
 # DELETE
-@app.route("/projects/<int:id>", methods=["DELETE"])
+@project_bp.route("/<int:id>", methods=["DELETE"])
 def delete_project(id):
     project = Project.query.get_or_404(id)
     db.session.delete(project)

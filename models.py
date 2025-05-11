@@ -1,8 +1,7 @@
-from flask_sqlalchemy import SQLAlchemy
+from app import db
 import enum
 from sqlalchemy.dialects.postgresql import ENUM, ARRAY
 from sqlalchemy.sql import func
-db = SQLAlchemy()
 
 # Enums
 class SkillEnum(enum.Enum):
@@ -129,6 +128,7 @@ class Contract(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
     client_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     freelancer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    terms = db.Column(db.Text)  # Added to match contract_routes.py
     agreed_rate = db.Column(db.Float)
     status = db.Column(db.Enum(ContractStatusEnum), default=ContractStatusEnum.active)
     started_at = db.Column(db.DateTime, server_default=func.now())
@@ -143,6 +143,7 @@ class Contract(db.Model):
             "projectId": self.project_id,
             "clientId": self.client_id,
             "freelancerId": self.freelancer_id,
+            "terms": self.terms,
             "agreedRate": self.agreed_rate,
             "status": self.status.value,
             "startedAt": self.started_at.isoformat() if self.started_at else None,
