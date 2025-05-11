@@ -1,9 +1,11 @@
-from flask import jsonify, request, abort
-from app import app, db  # Changed from config to app
+from flask import Blueprint, jsonify, request, abort
+from app import db
 from models import Proposal, ProposalStatusEnum
 
+proposal_bp = Blueprint('proposal', __name__, url_prefix='/proposals')
+
 # CREATE
-@app.route("/proposals", methods=["POST"])
+@proposal_bp.route("/", methods=["POST"])
 def create_proposal():
     data = request.get_json()
     if not all(key in data for key in ["projectId", "freelancerId"]):
@@ -26,19 +28,19 @@ def create_proposal():
         abort(500, description="Failed to create proposal")
 
 # READ ALL
-@app.route("/proposals", methods=["GET"])
+@proposal_bp.route("/", methods=["GET"])
 def get_proposals():
     proposals = Proposal.query.all()
     return jsonify({"proposals": [p.to_json() for p in proposals]})
 
 # READ SINGLE
-@app.route("/proposals/<int:id>", methods=["GET"])
+@proposal_bp.route("/<int:id>", methods=["GET"])
 def get_proposal(id):
     proposal = Proposal.query.get_or_404(id)
     return jsonify(proposal.to_json())
 
 # UPDATE
-@app.route("/proposals/<int:id>", methods=["PUT"])
+@proposal_bp.route("/<int:id>", methods=["PUT"])
 def update_proposal(id):
     proposal = Proposal.query.get_or_404(id)
     data = request.get_json()
@@ -49,7 +51,7 @@ def update_proposal(id):
     return jsonify({"message": "Proposal updated", "proposal": proposal.to_json()})
 
 # DELETE
-@app.route("/proposals/<int:id>", methods=["DELETE"])
+@proposal_bp.route("/<int:id>", methods=["DELETE"])
 def delete_proposal(id):
     proposal = Proposal.query.get_or_404(id)
     db.session.delete(proposal)
