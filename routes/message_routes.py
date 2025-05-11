@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from config import app, db
+from app import app, db
 from models import Message
 
 # CREATE
