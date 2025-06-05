@@ -19,3 +19,12 @@ app = create_app()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
+    
+from database import init_db
+@app.route('/init_db')
+def initialize_db():
+    try:
+        init_db()
+        return jsonify({'message': 'Database initialized'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
