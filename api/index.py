@@ -28,3 +28,11 @@ def initialize_db():
         return jsonify({'message': 'Database initialized'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/favicon.ico')
+def favicon():
+    return Response(status=204)  # No favicon, return empty response
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_file('static/favicon.ico')
