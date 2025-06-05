@@ -30,7 +30,7 @@ def create_user():
             'username': data['username'],
             'email': data['email'],
             'password': hash_password(data['password']),
-            'role': data.get('role', 'user'),  # Default to 'user'
+            'role': data.get('role', 'user'),
             'createdAt': created_at,
             'updatedAt': updated_at
         }
