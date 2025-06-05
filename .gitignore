@@ -1,0 +1,9 @@
+*.db
+*.sqlite
+__pycache__/
+*.pyc
+.env
+.venv/
+node_modules/
+.vercel
+*.log

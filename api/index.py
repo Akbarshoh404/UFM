@@ -1,38 +1,21 @@
-from flask import Flask
-from routes.user_routes import user_bp
+from flask import Flask, Response
+from flask_cors import CORS
 from routes.shop_routes import shop_bp
+from routes.user_routes import user_bp
 from routes.product_routes import product_bp
-from routes.order_routes import order_bp
 
-def create_app():
-    app = Flask(__name__)
+app = Flask(__name__)
+CORS(app)  # Enable CORS for frontend compatibility
 
-    # Register blueprints
-    app.register_blueprint(user_bp, url_prefix='/api')
-    app.register_blueprint(shop_bp, url_prefix='/api')
-    app.register_blueprint(product_bp, url_prefix='/api')
-    app.register_blueprint(order_bp, url_prefix='/api')
+# Register Blueprints
+app.register_blueprint(shop_bp, url_prefix='/api')
+app.register_blueprint(user_bp, url_prefix='/api')
+app.register_blueprint(product_bp, url_prefix='/api')
 
-    return app
-
-app = create_app()
+@app.route('/favicon.ico')
+@app.route('/favicon.png')
+def favicon():
+    return Response(status=204)  # Return empty response for favicon requests
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
-    
-from database import init_db
-@app.route('/init_db')
-def initialize_db():
-    try:
-        init_db()
-        return jsonify({'message': 'Database initialized'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/favicon.ico')
-def favicon():
-    return Response(status=204)  # No favicon, return empty response
-
-@app.route('/favicon.ico')
-def favicon():
-    return send_file('static/favicon.ico')
+    app.run(debug=True)
