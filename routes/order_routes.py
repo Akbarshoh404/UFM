@@ -14,6 +14,13 @@ def create_order():
     if not all(field in data for field in required_fields):
         return jsonify({'error': 'Missing required fields'}), 400
     
+    if data['user'] not in data_store['users']:
+        return jsonify({'error': 'User not found'}), 404
+    
+    for p in data['products']:
+        if p['product'] not in data_store['products']:
+            return jsonify({'error': f"Product {p['product']} not found"}), 404
+    
     order_id = generate_id()
     order_data = {
         '_id': order_id,
@@ -28,6 +35,11 @@ def create_order():
     }
     data_store['orders'][order_id] = order_data
     return jsonify({'_id': order_id}), 201
+
+@order_bp.route('/orders', methods=['GET'])
+def get_all_orders():
+    orders = list(data_store['orders'].values())
+    return jsonify(serialize_doc(orders)), 200
 
 @order_bp.route('/orders/<order_id>', methods=['GET'])
 def get_order(order_id):

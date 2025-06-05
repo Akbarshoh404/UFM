@@ -5,11 +5,9 @@ import bcrypt
 # In-memory data store
 data_store = {
     'users': {},
-    'shops': {},
-    'products': {},
-    'orders': {},
-    'product_reviews': {},
-    'shop_comments': {}
+    'shops': {},  # Includes 'comments' list
+    'products': {},  # Includes 'reviews' list
+    'orders': {}
 }
 
 def generate_id():

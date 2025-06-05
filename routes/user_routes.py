@@ -14,6 +14,9 @@ def create_user():
     if not all(field in data for field in required_fields):
         return jsonify({'error': 'Missing required fields'}), 400
     
+    if any(u['email'] == data['email'] for u in data_store['users'].values()):
+        return jsonify({'error': 'Email already exists'}), 400
+    
     user_id = generate_id()
     user_data = {
         '_id': user_id,
@@ -29,6 +32,11 @@ def create_user():
     }
     data_store['users'][user_id] = user_data
     return jsonify({'_id': user_id}), 201
+
+@user_bp.route('/users', methods=['GET'])
+def get_all_users():
+    users = list(data_store['users'].values())
+    return jsonify(serialize_doc(users)), 200
 
 @user_bp.route('/users/<user_id>', methods=['GET'])
 def get_user(user_id):

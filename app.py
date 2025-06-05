@@ -3,8 +3,6 @@ from routes.user_routes import user_bp
 from routes.shop_routes import shop_bp
 from routes.product_routes import product_bp
 from routes.order_routes import order_bp
-from routes.review_routes import review_bp
-from routes.comment_routes import comment_bp
 
 def create_app():
     app = Flask(__name__)
@@ -14,8 +12,6 @@ def create_app():
     app.register_blueprint(shop_bp, url_prefix='/api')
     app.register_blueprint(product_bp, url_prefix='/api')
     app.register_blueprint(order_bp, url_prefix='/api')
-    app.register_blueprint(review_bp, url_prefix='/api')
-    app.register_blueprint(comment_bp, url_prefix='/api')
 
     return app
 
